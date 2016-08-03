@@ -1,481 +1,320 @@
-'use strict';
-
-import React, {Component, PropTypes} from 'react';
+import React, {Component} from 'react';
 import {
-  StyleSheet,
   View,
   Text,
-  Animated,
+  Image,
+  Modal,
+  TouchableHighlight,
+  DatePickerAndroid,
+  TimePickerAndroid,
+  DatePickerIOS,
   Platform,
-  Dimensions,
-  PickerIOS
+  Animated
 } from 'react-native';
+import Style from './style';
+import Moment from 'moment';
 
-import PickerAndroid from 'react-native-picker-android';
-
-let Picker = Platform.OS === 'ios' ? PickerIOS : PickerAndroid;
-let PickerItem = Picker.Item;
-let {width, height} = Dimensions.get('window');
-
-const longSide = width > height ? width : height;
-const shortSide = width > height ? height : width;
-
-export default class PickerAny extends Component {
-
-  static propTypes = {
-    style: View.propTypes.style,
-    pickerElevation: PropTypes.number,
-    pickerBtnText: PropTypes.string,
-    pickerCancelBtnText: PropTypes.string,
-    pickerBtnStyle: Text.propTypes.style,
-    pickerTitle: PropTypes.string,
-    pickerTitleStyle: Text.propTypes.style,
-    pickerToolBarStyle: View.propTypes.style,
-    showMask: PropTypes.bool,
-    showDuration: PropTypes.number,
-    pickerData: PropTypes.any.isRequired,
-    selectedValue: PropTypes.any.isRequired,
-    onPickerDone: PropTypes.func,
-    onPickerCancel: PropTypes.func,
-    onValueChange: PropTypes.func
-  };
-
-  static defaultProps = {
-    style: {
-      width: width
-    },
-    pickerBtnText: 'Done',
-    pickerCancelBtnText: 'Cancel',
-    showMask: false,
-    showDuration: 300,
-    onPickerDone: ()=>{},
-    onPickerCancel: ()=>{},
-    onValueChange: ()=>{}
-  };
-
-  constructor(props, context){
-    super(props, context);
-  }
-
-  componentWillMount(){
-    this.state = this._getStateFromProps(this.props);
-  }
-
-  componentWillReceiveProps(newProps){
-    let newState = this._getStateFromProps(newProps);
-    this.setState(newState);
-  }
-
-  shouldComponentUpdate(nextProps, nextState, context){
-    return true;
-  }
-
-  _getStateFromProps(props){
-    //the pickedValue must looks like [wheelone's, wheeltwo's, ...]
-    //this.state.selectedValue may be the result of the first pickerWheel
-    let {pickerData, selectedValue} = props;
-    let pickerStyle = pickerData.constructor === Array ? 'parallel' : 'cascade';
-    let firstWheelData;
-    let firstPickedData;
-    let secondPickedData;
-    let secondWheelData;
-    let secondPickedDataIndex;
-    let thirdWheelData;
-    let thirdPickedDataIndex;
-    let cascadeData = {};
-    let slideAnim = (this.state && this.state.slideAnim ? this.state.slideAnim : new Animated.Value(-height));
-
-    if(pickerStyle === 'parallel'){
-      //compatible single wheel sence
-      if(selectedValue.constructor !== Array){
-        selectedValue = [selectedValue];
-      }
-      if(pickerData[0].constructor !== Array){
-        pickerData = [pickerData];
-      }
-    }
-    else if(pickerStyle === 'cascade'){
-      //only support three stage
-      firstWheelData = Object.keys(pickerData);
-      firstPickedData = props.selectedValue[0];
-      secondPickedData = props.selectedValue[1];
-      cascadeData = this._getCascadeData(pickerData, selectedValue, firstPickedData, secondPickedData, true);
-    }
-    //save picked data
-    this.pickedValue = JSON.parse(JSON.stringify(selectedValue));
-    this.pickerStyle = pickerStyle;
-    return {
-      ...props,
-      pickerData,
-      selectedValue,
-      //list of first wheel data
-      firstWheelData,
-      //first wheel selected value
-      firstPickedData,
-      slideAnim,
-      //list of second wheel data and pickedDataIndex
-      secondWheelData: cascadeData.secondWheelData,
-      secondPickedDataIndex: cascadeData.secondPickedDataIndex,
-      //third wheel selected value and pickedDataIndex
-      thirdWheelData: cascadeData.thirdWheelData,
-      thirdPickedDataIndex: cascadeData.thirdPickedDataIndex
-    };
-  }
-
-  _slideUp(){
-    this._isMoving = true;
-    Animated.timing(
-      this.state.slideAnim,
-      {
-        toValue: 0,
-        duration: this.state.showDuration,
-      }
-    ).start((evt) => {
-      if(evt.finished) {
-        this._isMoving = false;
-        this._isPickerShow = true;
-      }
-    });
-  }
-
-  _slideDown(){
-    this._isMoving = true;
-    Animated.timing(
-      this.state.slideAnim,
-      {
-        toValue: -height,
-        duration: this.state.showDuration,
-      }
-    ).start((evt) => {
-      if(evt.finished) {
-        this._isMoving = false;
-        this._isPickerShow = false;
-      }
-    });
-  }
-
-  _toggle(){
-    if(this._isMoving) {
-      return;
-    }
-    if(this._isPickerShow) {
-      this._slideDown();
-    }
-    else{
-      this._slideUp();
-    }
-  }
-  
-  toggle(){
-    this._toggle();
-  }
-  show(){
-    if(!this._isPickerShow){
-      this._slideUp();
-    }
-  }
-  hide(){
-    if(this._isPickerShow){
-      this._slideDown();
-    }
-  }
-  isPickerShow(){
-    return this._isPickerShow;
-  }
-
-  _prePressHandle(callback){
-    this.pickerWheel.moveUp();
-  }
-
-  _nextPressHandle(callback){
-    this.pickerWheel.moveDown();
-  }
-
-  _pickerCancel(){
-    this._toggle();
-    this.state.onPickerCancel();
-  }
-
-  _pickerFinish(){
-    this._toggle();
-    this.state.onPickerDone(this.pickedValue);
-  }
-
-  _renderParallelWheel(pickerData){
-    return pickerData.map((item, index) => {
-      return (
-        <View style={styles.pickerWheel} key={index}>
-          <Picker
-            selectedValue={this.state.selectedValue[index]}
-            onValueChange={value => {
-              this.pickedValue.splice(index, 1, value);
-              //do not set state to another object!! why?
-              // this.setState({
-              //  selectedValue: this.pickedValue
-              // });
-              this.setState({
-                selectedValue: JSON.parse(JSON.stringify(this.pickedValue))
-              });
-              this.state.onValueChange(JSON.parse(JSON.stringify(this.pickedValue)), index);
-            }} >
-            {item.map((value, index) => (
-              <PickerItem
-                key={index}
-                value={value}
-                label={value.toString()}
-              />)
-            )}
-          </Picker>
-        </View>
-      );
-    });
-  }
-
-  _getCascadeData(pickerData, pickedValue, firstPickedData, secondPickedData, onInit){
-    let secondWheelData;
-    let secondPickedDataIndex;
-    let thirdWheelData;
-    let thirdPickedDataIndex;
-    //only support two and three stage
-    for(let key in pickerData){
-      //two stage
-      if(pickerData[key].constructor === Array){
-        secondWheelData = pickerData[firstPickedData];
-        if(onInit){
-          secondWheelData.forEach(function(v, k){
-            if(v === pickedValue[1]){
-              secondPickedDataIndex = k;
-            }
-          }.bind(this));
-        }
-        else{
-          secondPickedDataIndex = 0;
-        }
-        break;
-      }
-      //three stage
-      else{
-        secondWheelData = Object.keys(pickerData[firstPickedData]);
-        if(onInit){
-          secondWheelData.forEach(function(v, k){
-            if(v === pickedValue[1]){
-              secondPickedDataIndex = k;
-            }
-          }.bind(this));
-        }
-        else{
-          secondPickedDataIndex = 0;
-        }
-        thirdWheelData = pickerData[firstPickedData][secondPickedData];
-        if(onInit){
-          thirdWheelData.forEach(function(v, k){
-            if(v === pickedValue[2]){
-              thirdPickedDataIndex = k;
-            }
-          })
-        }
-        else{
-          thirdPickedDataIndex = 0;
-        }
-        break;
-      }
-    }
-
-    return {
-      secondWheelData,
-      secondPickedDataIndex,
-      thirdWheelData,
-      thirdPickedDataIndex
-    }
-  }
-
-  _renderCascadeWheel(pickerData){
-    let thirdWheel = this.state.thirdWheelData && (
-      <View style={styles.pickerWheel}>
-        <Picker
-          ref={'thirdWheel'}
-          selectedValue={this.state.thirdPickedDataIndex}
-          onValueChange={(index) => {
-            this.pickedValue.splice(2, 1, this.state.thirdWheelData[index]);
-            this.setState({
-              thirdPickedDataIndex: index,
-              selectedValue: 'wheel3'+index
-            });
-            this.state.onValueChange(JSON.parse(JSON.stringify(this.pickedValue)), 2);
-          }} >
-          {this.state.thirdWheelData.map((value, index) => (
-            <PickerItem
-              key={index}
-              value={index}
-              label={value.toString()}
-            />)
-          )}
-        </Picker>
-      </View>
-    );
-
-    return (
-      <View style={[styles.pickerWrap, {width: this.state.style.width || width}]}>
-        <View style={styles.pickerWheel}>
-          <Picker
-            ref={'firstWheel'}
-            selectedValue={this.state.firstPickedData}
-            onValueChange={value => {
-              let secondWheelData = Object.keys(pickerData[value]);
-              let cascadeData = this._getCascadeData(pickerData, this.pickedValue, value, secondWheelData[0]);
-              //when onPicked, this.pickedValue will pass to the parent
-              //when firstWheel changed, second and third will also change
-              if(cascadeData.thirdWheelData){
-                this.pickedValue.splice(0, 3, value, cascadeData.secondWheelData[0], cascadeData.thirdWheelData[0]);
-              }
-              else{
-                this.pickedValue.splice(0, 2, value, cascadeData.secondWheelData[0]);
-              }
-
-              this.setState({
-                selectedValue: 'wheel1'+value,
-                firstPickedData: value,
-                secondWheelData: cascadeData.secondWheelData,
-                secondPickedDataIndex: 0,
-                thirdWheelData: cascadeData.thirdWheelData,
-                thirdPickedDataIndex: 0
-              });
-              this.state.onValueChange(JSON.parse(JSON.stringify(this.pickedValue)), 0);
-              this.refs.secondWheel && this.refs.secondWheel.moveTo && this.refs.secondWheel.moveTo(0);
-              this.refs.thirdWheel && this.refs.thirdWheel.moveTo && this.refs.thirdWheel.moveTo(0);
-            }} >
-            {this.state.firstWheelData.map((value, index) => (
-              <PickerItem
-                key={index}
-                value={value}
-                label={value.toString()}
-              />)
-            )}
-          </Picker>
-        </View>
-        <View style={styles.pickerWheel}>
-          <Picker
-            ref={'secondWheel'}
-            selectedValue={this.state.secondPickedDataIndex}
-            onValueChange={(index) => {
-              let thirdWheelData = pickerData[this.state.firstPickedData][this.state.secondWheelData[index]];
-              if(thirdWheelData){
-                this.pickedValue.splice(1, 2, this.state.secondWheelData[index], thirdWheelData[0]);
-              }
-              else{
-                this.pickedValue.splice(1, 1, this.state.secondWheelData[index]);
-              }
-
-              this.setState({
-                secondPickedDataIndex: index,
-                thirdWheelData,
-                thirdPickedDataIndex: 0,
-                selectedValue: 'wheel2'+index
-              });
-              this.state.onValueChange(JSON.parse(JSON.stringify(this.pickedValue)), 1);
-              this.refs.thirdWheel && this.refs.thirdWheel.moveTo && this.refs.thirdWheel.moveTo(0);
-            }} >
-            {this.state.secondWheelData.map((value, index) => (
-              <PickerItem
-                key={index}
-                value={index}
-                label={value.toString()}
-              />)
-            )}
-          </Picker>
-        </View>
-        {thirdWheel}
-      </View>
-    );
-  }
-
-  _renderWheel(pickerData){
-    let wheel = null;
-    if(this.pickerStyle === 'parallel'){
-      wheel = this._renderParallelWheel(pickerData);
-    }
-    else if(this.pickerStyle === 'cascade'){
-      wheel = this._renderCascadeWheel(pickerData);
-    }
-    return wheel;
-  }
-
-  render(){
-    return (
-      <View style={[styles.pickerWrap, {width: this.state.style.width || width}]}>
-        {this._renderWheel(this.state.pickerData)}
-      </View>
-    );
-  }
+const FORMATS = {
+  'date': 'YYYY-MM-DD',
+  'datetime': 'YYYY-MM-DD HH:mm',
+  'time': 'HH:mm'
 };
 
-let styles = StyleSheet.create({
-  picker: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'transparent',
-  },
-  pickerBox: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    backgroundColor: '#bdc0c7'
-  },
-  mask: {
-    position: 'absolute',
-    top: 0,
-    backgroundColor: 'transparent',
-    height: height,
-    width: width
-  },
-  pickerWrap: {
-    flexDirection: 'row'
-  },
-  pickerWheel: {
-    flex: 1
-  },
-  pickerToolbar: {
-    height: 30,
-    backgroundColor: '#e6e6e6',
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#c3c3c3',
-    alignItems: 'center'
-  },
-  pickerBtnView: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center'
-  },
-  pickerMoveBtn: {
-    color: '#149be0',
-    fontSize: 16,
-    marginLeft: 20
-  },
-  pickerCancelBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    marginLeft: 20
-  },
-  pickerTitle: {
-    flex: 4,
-    color: 'black',
-    textAlign: 'center'
-  },
-  pickerFinishBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginRight: 20
-  },
-  pickerFinishBtnText: {
-    fontSize: 16,
-    color: '#149be0'
+class DatePicker extends Component {
+  constructor(props) {
+    super(props);
+
+    this.format = this.props.format || FORMATS[this.props.mode];
+
+    this.state = {
+      date: this.getDate(),
+      modalVisible: false,
+      disabled: this.props.disabled,
+      animatedHeight: new Animated.Value(0)
+    };
+
+    this.datePicked = this.datePicked.bind(this);
+    this.onPressDate = this.onPressDate.bind(this);
+    this.onPressCancel = this.onPressCancel.bind(this);
+    this.onPressConfirm = this.onPressConfirm.bind(this);
+    this.onDatePicked = this.onDatePicked.bind(this);
+    this.onTimePicked = this.onTimePicked.bind(this);
+    this.onDatetimePicked = this.onDatetimePicked.bind(this);
+    this.onDatetimeTimePicked = this.onDatetimeTimePicked.bind(this);
+    this.setModalVisible = this.setModalVisible.bind(this);
   }
-});
+
+  componentWillMount() {
+    // ignore the warning of Failed propType for date of DatePickerIOS, will remove after being fixed by official
+    console.ignoredYellowBox = [
+      'Warning: Failed propType'
+      // Other warnings you don't want like 'jsSchedulingOverhead',
+    ];
+  }
+
+  setModalVisible(visible) {
+    this.setState({modalVisible: visible});
+
+    // slide animation
+    if (visible) {
+      Animated.timing(
+        this.state.animatedHeight,
+        {
+          toValue: this.props.height,
+          duration: this.props.duration
+        }
+      ).start();
+    } else {
+      this.setState({
+        animatedHeight: new Animated.Value(0)
+      });
+    }
+  }
+
+  onPressCancel() {
+    this.setModalVisible(false);
+  }
+
+  onPressConfirm() {
+    this.datePicked();
+    this.setModalVisible(false);
+  }
+
+  getDate(date = this.props.date) {
+    // date默认值
+    if (!date) {
+      let now = new Date();
+      if (this.props.minDate) {
+        let minDate = this.getDate(this.props.minDate);
+
+        if (now < minDate) {
+          return minDate;
+        }
+      }
+
+      if (this.props.maxDate) {
+        let maxDate = this.getDate(this.props.maxDate);
+
+        if (now > maxDate) {
+          return maxDate;
+        }
+      }
+
+      return now;
+    }
+
+    if (date instanceof Date) {
+      return date;
+    }
+
+    return Moment(date, this.format).toDate();
+  }
+
+  getDateStr(date = this.props.date) {
+    if (date instanceof Date) {
+      return Moment(date).format(this.format);
+    } else {
+      return date;
+      return Moment(this.getDate(date)).format(this.format);
+    }
+  }
+
+  datePicked() {
+    if (typeof this.props.onDateChange === 'function') {
+      this.props.onDateChange(this.state.date);
+    }
+  }
+
+  getTitleElement() {
+    const {date, placeholder} = this.props;
+    if (!date && placeholder) {
+      return (<Text style={[Style.placeholderText, this.props.customStyles.placeholderText]}>{placeholder}</Text>);
+    }
+    return (<Text style={[Style.dateText, this.props.customStyles.dateText]}>{this.getDateStr()}</Text>);
+  }
+
+  onDatePicked({action, year, month, day}) {
+    if (action !== DatePickerAndroid.dismissedAction) {
+      this.setState({
+        date: (new Date(year, month, day)).getTime()
+      });
+      this.datePicked();
+    }
+  }
+
+  onTimePicked({action, hour, minute}) {
+    if (action !== DatePickerAndroid.dismissedAction) {
+      this.setState({
+        date: Moment().hour(hour).minute(minute).toDate()
+      });
+      this.datePicked();
+    }
+  }
+
+  onDatetimePicked({action, year, month, day}) {
+    if (action !== DatePickerAndroid.dismissedAction) {
+      let timeMoment = Moment(this.state.date);
+
+      TimePickerAndroid.open({
+        hour: timeMoment.hour(),
+        minute: timeMoment.minutes(),
+        is24Hour: !this.format.match(/h|a/)
+      }).then(this.onDatetimeTimePicked.bind(this, year, month, day));
+    }
+  }
+
+  onDatetimeTimePicked(year, month, day, {action, hour, minute}) {
+    if (action !== DatePickerAndroid.dismissedAction) {
+      this.setState({
+        date: new Date(year, month, day, hour, minute)
+      });
+      this.datePicked();
+    }
+  }
+
+  onPressDate() {
+    if (this.state.disabled) {
+      return true;
+    }
+
+    // reset state
+    this.setState({
+      date: this.getDate()
+    });
+
+    if (Platform.OS === 'ios') {
+      this.setModalVisible(true);
+    } else {
+
+      // 选日期
+      if (this.props.mode === 'date') {
+        DatePickerAndroid.open({
+          date: this.state.date,
+          minDate: this.props.minDate && this.getDate(this.props.minDate),
+          maxDate: this.props.maxDate && this.getDate(this.props.maxDate)
+        }).then(this.onDatePicked);
+      } else if (this.props.mode === 'time') {
+        // 选时间
+
+        let timeMoment = Moment(this.state.date);
+
+        TimePickerAndroid.open({
+          hour: timeMoment.hour(),
+          minute: timeMoment.minutes(),
+          is24Hour: !this.format.match(/h|a/)
+        }).then(this.onTimePicked);
+      } else if (this.props.mode === 'datetime') {
+        // 选日期和时间
+
+        DatePickerAndroid.open({
+          date: this.state.date,
+          minDate: this.props.minDate && this.getDate(this.props.minDate),
+          maxDate: this.props.maxDate && this.getDate(this.props.maxDate)
+        }).then(this.onDatetimePicked);
+      } else {
+        throw new Error('The specified mode is not supported');
+      }
+    }
+  }
+
+  render() {
+    let customStyles = this.props.customStyles;
+    this.format = this.props.format || FORMATS[this.props.mode];
+    const dateInputStyle = [
+      Style.dateInput, customStyles.dateInput,
+      this.state.disabled && Style.disabled,
+      this.state.disabled && customStyles.disabled
+    ];
+
+    return (
+        <View>
+          {Platform.OS === 'ios' && <Modal
+            transparent={true}
+            visible={this.state.modalVisible}
+            onRequestClose={() => {this.setModalVisible(false);}}
+          >
+            <TouchableHighlight
+              style={Style.datePickerMask}
+              activeOpacity={1}
+              underlayColor={'#00000077'}
+              onPress={this.onPressCancel}
+            >
+              <TouchableHighlight
+                underlayColor={'#fff'}
+                style={{flex: 1}}
+              >
+                <Animated.View
+                  style={[Style.datePickerCon, {height: this.state.animatedHeight}, customStyles.datePickerCon]}
+                >
+                  <DatePickerIOS
+                    date={this.state.date}
+                    mode={this.props.mode}
+                    minimumDate={this.props.minDate && this.getDate(this.props.minDate)}
+                    maximumDate={this.props.maxDate && this.getDate(this.props.maxDate)}
+                    onDateChange={(date) => this.setState({date: date})}
+                    style={[Style.datePicker, customStyles.datePicker]}
+                  />
+                  <TouchableHighlight
+                    underlayColor={'transparent'}
+                    onPress={this.onPressCancel}
+                    style={[Style.btnText, Style.btnCancel, customStyles.btnCancel]}
+                  >
+                    <Text
+                      style={[Style.btnTextText, Style.btnTextCancel, customStyles.btnTextCancel]}
+                    >
+                      {this.props.cancelBtnText}
+                    </Text>
+                  </TouchableHighlight>
+                  <TouchableHighlight
+                    underlayColor={'transparent'}
+                    onPress={this.onPressConfirm}
+                    style={[Style.btnText, Style.btnConfirm, customStyles.btnConfirm]}
+                  >
+                    <Text style={[Style.btnTextText, customStyles.btnTextConfirm]}>{this.props.confirmBtnText}</Text>
+                  </TouchableHighlight>
+                </Animated.View>
+              </TouchableHighlight>
+            </TouchableHighlight>
+          </Modal>}
+        </View>
+    );
+  }
+}
+
+DatePicker.defaultProps = {
+  mode: 'date',
+  date: '',
+  // component height: 216(DatePickerIOS) + 1(borderTop) + 42(marginTop), IOS only
+  height: 259,
+
+  // slide animation duration time, default to 300ms, IOS only
+  duration: 300,
+  confirmBtnText: '确定',
+  cancelBtnText: '取消',
+  iconSource: require('./date_icon.png'),
+  customStyles: {},
+
+  // whether or not show the icon
+  showIcon: false,
+  disabled: false,
+  placeholder: ''
+};
+
+DatePicker.propTypes = {
+  mode: React.PropTypes.oneOf(['date', 'datetime', 'time']),
+  date: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.instanceOf(Date)]),
+  minDate: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.instanceOf(Date)]),
+  maxDate: React.PropTypes.oneOfType([React.PropTypes.string, React.PropTypes.instanceOf(Date)]),
+  height: React.PropTypes.number,
+  duration: React.PropTypes.number,
+  confirmBtnText: React.PropTypes.string,
+  cancelBtnText: React.PropTypes.string,
+  iconSource: React.PropTypes.oneOfType([React.PropTypes.number, React.PropTypes.object]),
+  customStyles: React.PropTypes.object,
+  showIcon: React.PropTypes.bool,
+  disabled: React.PropTypes.bool,
+  onDateChange: React.PropTypes.func,
+  placeholder: React.PropTypes.string
+};
+
+export default DatePicker;
