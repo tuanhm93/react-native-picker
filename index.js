@@ -207,6 +207,8 @@ export default class PickerAny extends Component {
         <View style={styles.pickerWheel} key={index}>
           <Picker
             selectedValue={this.state.selectedValue[index]}
+            style = {this.props.style}
+            itemStyle = {this.props.itemStyle}
             onValueChange={value => {
               this.pickedValue.splice(index, 1, value);
               //do not set state to another object!! why?

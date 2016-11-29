@@ -1,32 +1,90 @@
 {
-  "name": "react-native-picker",
-  "version": "3.0.5",
-  "description": "react-native-picker",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/beefe/react-native-picker.git"
-  },
-  "keywords": [
-    "react-native",
-    "picker"
+  "_args": [
+    [
+      {
+        "hosted": {
+          "directUrl": "https://raw.githubusercontent.com/tuanhm93/react-native-picker/master/package.json",
+          "gitUrl": "git://github.com/tuanhm93/react-native-picker.git",
+          "httpsUrl": "git+https://github.com/tuanhm93/react-native-picker.git",
+          "shortcut": "github:tuanhm93/react-native-picker",
+          "ssh": "git@github.com:tuanhm93/react-native-picker.git",
+          "sshUrl": "git+ssh://git@github.com/tuanhm93/react-native-picker.git",
+          "type": "github"
+        },
+        "name": "react-native-picker",
+        "raw": "react-native-picker@git+https://github.com/tuanhm93/react-native-picker.git",
+        "rawSpec": "git+https://github.com/tuanhm93/react-native-picker.git",
+        "scope": null,
+        "spec": "git+https://github.com/tuanhm93/react-native-picker.git",
+        "type": "hosted"
+      },
+      "/Users/thudo/tuanhm/thudoproject/SCTVFilm"
+    ]
   ],
+  "_from": "git+https://github.com/tuanhm93/react-native-picker.git",
+  "_id": "react-native-picker@3.0.5",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/react-native-picker",
+  "_phantomChildren": {},
+  "_requested": {
+    "hosted": {
+      "directUrl": "https://raw.githubusercontent.com/tuanhm93/react-native-picker/master/package.json",
+      "gitUrl": "git://github.com/tuanhm93/react-native-picker.git",
+      "httpsUrl": "git+https://github.com/tuanhm93/react-native-picker.git",
+      "shortcut": "github:tuanhm93/react-native-picker",
+      "ssh": "git@github.com:tuanhm93/react-native-picker.git",
+      "sshUrl": "git+ssh://git@github.com/tuanhm93/react-native-picker.git",
+      "type": "github"
+    },
+    "name": "react-native-picker",
+    "raw": "react-native-picker@git+https://github.com/tuanhm93/react-native-picker.git",
+    "rawSpec": "git+https://github.com/tuanhm93/react-native-picker.git",
+    "scope": null,
+    "spec": "git+https://github.com/tuanhm93/react-native-picker.git",
+    "type": "hosted"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "git+https://github.com/tuanhm93/react-native-picker.git#c3e227cd596e0f198dd1a809cd9b604f3a4c308a",
+  "_shasum": "6901acf82341471f1b317349919ca0e3003a13a4",
+  "_shrinkwrap": null,
+  "_spec": "react-native-picker@git+https://github.com/tuanhm93/react-native-picker.git",
+  "_where": "/Users/thudo/tuanhm/thudoproject/SCTVFilm",
   "author": {
-    "name": "zooble",
-    "email": "wenliang.web@gmail.com"
+    "email": "wenliang.web@gmail.com",
+    "name": "zooble"
+  },
+  "bugs": {
+    "url": "https://github.com/beefe/react-native-picker/issues"
   },
   "dependencies": {
     "react-native-picker-android": "git+https://github.com/tuanhm93/react-native-picker-android.git"
   },
+  "description": "react-native-picker",
+  "devDependencies": {},
   "engines": {
     "node": ">=4"
   },
+  "gitHead": "c3e227cd596e0f198dd1a809cd9b604f3a4c308a",
+  "homepage": "https://github.com/beefe/react-native-picker#readme",
+  "keywords": [
+    "react-native",
+    "picker"
+  ],
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/beefe/react-native-picker/issues"
+  "main": "index.js",
+  "name": "react-native-picker",
+  "optionalDependencies": {},
+  "readme": "# react-native-picker\n\n![version](https://img.shields.io/npm/v/react-native-picker.svg?style=flat-square)\n![dep](https://david-dm.org/beefe/react-native-picker.svg?style=flat-square)\n\nA Picker written in pure javascript for cross-platform support.\n\nIt was most likely an example of how to build a cross-platform Picker Component use [react-native-picker-android](https://github.com/beefe/react-native-picker-android).\n\n###Warn\nif 0.14.2 <= react-native <=0.24 `npm install react-native-picker@2.0.5 --save`  \nif 0.24 < react-native `npm install react-native-picker --save`\n\n####Demo\n\n- <b>[Date-picker](./demo/date-picker.js)</b>\n- <b>[Area-picker](./demo/area-picker.js)</b>\n\n\n![ui](./doc/ui.gif)\n\n![ui2](./doc/ui2.jpg)\n\n###Documentation\n\n####Props\n- <b>style</b> style of picker, you can set width and height of picker in this prop\n- <b>pickerElevation</b> elevation of picker (for issue https://github.com/beefe/react-native-picker/issues/27)\n- <b>pickerBtnText</b> string, tool bar's confirm btn text\n- <b>pickerCancelBtnText</b> string, tool bar's cancel ben text\n- <b>pickerBtnStyle</b> textStylePropType, tool bar's btn style\n- <b>pickerToolBarStyle</b> viewStylePropType, tool bar's style\n- <b>showDuration</b> number, animation of picker\n- <b>showMask</b> boolean, default to be false, cancel the picker by tapping in the rest of the screen support when setted to be true\n- <b>pickerTitle</b> string, title of picker\n- <b>pickerTitleStyle</b> textStylePropType, style of title\n- <b>pickerData</b> array\n- <b>selectedValue</b> any\n- <b>onPickerDone</b> function\n- <b>onPickerCancel</b> function\n- <b>onValueChange</b> function\n\n####Methods\n- <b>toggle</b> show or hide picker, default to be hiden\n- <b>show</b> show picker\n- <b>hide</b> hide picker\n- <b>isPickerShow</b> get status of picker, return a boolean\n\n###Usage\n\n####Step 1 - install\n\n```\n\tnpm install react-native-picker --save\n```\n\n####Step 2 - import and use in project\n\n```javascript\n\timport Picker from 'react-native-picker'\n\t\n\t<Picker\n\t\tstyle={{\n\t\t\theight: 300\n\t\t}}\n\t\tshowDuration={300}\n\t\tshowMask={true}\n\t\tpickerData={}//picker`s value List\n\t\tselectedValue={}//default to be selected value\n\t\tonPickerDone={}//when confirm your choice\n\t/>\n```\n\n###Notice\n\n####support two modes:\n\n<b>1. parallel:</b> such as time picker, wheels have no connection with each other\n\n<b>2. cascade:</b> such as date picker, address picker .etc, when front wheel changed, the behind wheels will all be reset\n\n####parallel:\n\n- single wheel:\n\n```javascript\n\tpickerData = [1,2,3,4];\n\tselectedValue = 3;\n```\n\n- two or more wheel:\n\n```javascript\n\tpickerData = [\n\t\t[1,2,3,4],\n\t\t[5,6,7,8],\n\t\t...\n\t];\n\tselectedValue = [1, 5];\n```\n\n####cascade:\n\n- two wheel\n\n```javascript\n\tpickerData = {\n\t\t{\n\t\t\ta: [1,2,3,4],\n\t\t\tb: [5,6,7,8],\n\t\t\t...\n\t\t}\n\t};\n\tselectedValue = ['a', 2];\n```\n\n- three wheel\n\n```javascript\n\tpickerData = {\n\t\ta: {\n\t\t\ta1: [1,2,3,4],\n\t\t\ta2: [5,6,7,8],\n\t\t\ta3: [9,10,11,12]\n\t\t},\n\t\tb: {\n\t\t\tb1: [1,2,3,4],\n\t\t\tb2: [5,6,7,8],\n\t\t\tb3: [9,10,12,12]\n\t\t}\n\t\t...\n\t};\n\tselectedValue = ['a', 'a1', 1];\n```\n",
+  "readmeFilename": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beefe/react-native-picker.git"
   },
-  "homepage": "https://github.com/beefe/react-native-picker#readme"
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "3.0.5"
 }
